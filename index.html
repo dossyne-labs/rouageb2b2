@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suivi d'appels Rouage — BD2</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#FBF8F2; --surface:#FFFFFF; --surface-tan:#F4EFE5;
+    --border:#E4DCC9; --border-strong:#D8CDB6;
+    --ink:#201D18; --ink-muted:#6B6259; --ink-faint:#9A9082;
+    --accent:#B8642B; --accent-ink:#FFFFFF; --accent-soft:#F3E1CE; --accent-soft-ink:#8A4A1C;
+    --st-todo-bg:#EDE7DA; --st-todo-fg:#6B6259;
+    --st-tente-bg:#FBEBC7; --st-tente-fg:#8A6A16;
+    --st-barrage-bg:#EFE1F0; --st-barrage-fg:#7A4A82;
+    --st-messagerie-bg:#DDEDEA; --st-messagerie-fg:#2F6F66;
+    --st-injoignable-bg:#ECE9E3; --st-injoignable-fg:#7A736A;
+    --st-decideur-bg:#DCE7F2; --st-decideur-fg:#2E5C86;
+    --st-refus-bg:#F5DEDE; --st-refus-fg:#A23B3B;
+    --st-rdv-bg:#DCEEDD; --st-rdv-fg:#2A7A40;
+    --st-sans-bg:#EAE6DE; --st-sans-fg:#8A8072;
+    --pr-a-bg:#B8642B; --pr-a-fg:#FFFFFF;
+    --pr-b-bg:#E9CCAB; --pr-b-fg:#6B3E12;
+    --pr-c-bg:#E6E1D3; --pr-c-fg:#7A736A;
+    --shadow: 0 1px 2px rgba(32,29,24,.06), 0 4px 14px rgba(32,29,24,.05);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-inline:16px;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+  h1,h2,h3{font-family:'Source Serif 4', Georgia, serif; font-weight:700; margin:0;}
+  a{color:inherit;}
+  header.top{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    padding-top:16px; padding-bottom:10px; border-bottom:1px solid var(--border);
+  }
+  .brandrow{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .brand{display:flex; align-items:center; gap:9px; min-width:0;}
+  .brand .name{font-family:'Source Serif 4',serif; font-weight:700; font-size:17px;}
+  .brand .sub{font-size:11px; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase;}
+  .toprow-actions{display:flex; gap:8px; align-items:center;}
+  .btn-ghost{
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--ink-muted);
+    border-radius:9px; padding:7px 12px; font-size:12.5px; font-weight:600; cursor:pointer; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-ghost:hover{background:var(--surface-tan);}
+  .searchrow{display:flex; gap:8px; margin:14px 0 10px;}
+  .searchrow input[type="search"]{
+    flex:1; border:1px solid var(--border-strong); background:var(--surface); color:var(--ink);
+    border-radius:11px; padding:10px 12px; font-size:14px; min-width:0;
+  }
+  .chiprow{display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px;}
+  .chip{
+    flex:none; border:1px solid var(--border-strong); background:var(--surface); color:var(--ink-muted);
+    border-radius:999px; padding:7px 13px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip .n{font-size:11px; background:var(--surface-tan); padding:1px 6px; border-radius:999px;}
+  .chip.active{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+  .chip.active .n{background:rgba(255,255,255,.18); color:inherit;}
+  main{padding-bottom:64px;}
+  .empty, .loading{text-align:center; color:var(--ink-faint); padding:40px 16px; font-size:14px;}
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:13px 14px; margin-bottom:9px; cursor:pointer; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .card:active{transform:scale(.995);}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .card-titles .co{font-family:'Source Serif 4',serif; font-weight:700; font-size:16.5px; line-height:1.25;}
+  .badges{display:flex; gap:6px; flex:none; align-items:center;}
+  .badge{font-size:11px; font-weight:700; border-radius:7px; padding:3px 7px;}
+  .badge.pr-A{background:var(--pr-a-bg); color:var(--pr-a-fg);}
+  .badge.pr-B{background:var(--pr-b-bg); color:var(--pr-b-fg);}
+  .badge.pr-C{background:var(--pr-c-bg); color:var(--pr-c-fg);}
+  .card-bottom{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .pill{font-size:11.5px; font-weight:700; border-radius:999px; padding:3px 10px; white-space:nowrap;}
+  .pill.st-a-appeler{background:var(--st-todo-bg); color:var(--st-todo-fg);}
+  .pill.st-tente{background:var(--st-tente-bg); color:var(--st-tente-fg);}
+  .pill.st-barrage{background:var(--st-barrage-bg); color:var(--st-barrage-fg);}
+  .pill.st-messagerie{background:var(--st-messagerie-bg); color:var(--st-messagerie-fg);}
+  .pill.st-injoignable{background:var(--st-injoignable-bg); color:var(--st-injoignable-fg);}
+  .pill.st-decideur-joint{background:var(--st-decideur-bg); color:var(--st-decideur-fg);}
+  .pill.st-refus{background:var(--st-refus-bg); color:var(--st-refus-fg);}
+  .pill.st-rdv-obtenu{background:var(--st-rdv-bg); color:var(--st-rdv-fg);}
+  .pill.st-sans-suite{background:var(--st-sans-bg); color:var(--st-sans-fg);}
+  .flagrow{display:flex; gap:6px; flex-wrap:wrap;}
+  .flag{font-size:11px; font-weight:700; border-radius:999px; padding:3px 9px;}
+  .flag.warn{background:#F5DEDE; color:#A23B3B;}
+  .flag.nonum{background:#ECE9E3; color:#7A736A;}
+  .meta{font-size:12.5px; color:var(--ink-muted);}
+  /* modal */
+  .overlay{position:fixed; inset:0; background:rgba(20,17,12,.5); z-index:40; display:flex; align-items:flex-end; justify-content:center;}
+  @media (min-width:640px){.overlay{align-items:center;}}
+  .sheet{
+    background:var(--bg); width:100%; max-width:640px; max-height:92vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; padding:18px 18px 24px;
+  }
+  @media (min-width:640px){.sheet{border-radius:20px; max-height:88vh;}}
+  .sheet-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .sheet-head h2{font-size:22px; line-height:1.2;}
+  .sheet-head .close{
+    flex:none; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--ink-muted); font-size:16px; cursor:pointer;
+  }
+  .sheet-body{font-size:14px; line-height:1.6;}
+  .sheet-body h3{font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:16px 0 6px;}
+  .sheet-body h3:first-child{margin-top:0;}
+  .sheet-body blockquote{
+    border-left:3px solid var(--accent); background:var(--surface-tan); border-radius:0 10px 10px 0;
+    padding:11px 14px; margin:0 0 10px; font-weight:600;
+  }
+  .sheet-body p{margin:0 0 8px;}
+  .sheet-body ul{margin:0 0 8px; padding-left:20px;}
+  .sheet-body strong{font-weight:700;}
+  .gh-cta{
+    display:flex; align-items:center; justify-content:center; gap:8px; background:var(--ink); color:var(--bg);
+    border-radius:11px; padding:12px 16px; font-weight:700; font-size:14px; text-decoration:none; margin-top:16px;
+  }
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+    background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600;
+    z-index:60; box-shadow:0 6px 20px rgba(0,0,0,.25);
+  }
+  .rate-note{font-size:11.5px; color:var(--ink-faint); text-align:center; padding:10px 0 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow">
+      <div class="brand">
+        <div>
+          <div class="name">Suivi d'appels</div>
+          <div class="sub">Rouage Solutions · BD2 · via GitHub</div>
+        </div>
+      </div>
+      <div class="toprow-actions">
+        <button class="btn-ghost" id="refreshBtn">↻ Actualiser</button>
+        <a class="btn-ghost" href="https://github.com/dossyne-labs/rouageb2b/issues" target="_blank" rel="noopener">Voir sur GitHub</a>
+      </div>
+    </div>
+    <div class="searchrow"><input type="search" id="searchInput" placeholder="Rechercher une entreprise, un nom…"></div>
+    <div class="chiprow" id="chipRow"></div>
+  </header>
+  <main>
+    <div id="cardList" class="loading">Chargement…</div>
+  </main>
+</div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function(){
+  "use strict";
+  var REPO = "dossyne-labs/rouageb2b";
+  var API = "https://api.github.com/repos/" + REPO;
+  var STATUS_ORDER = ["a-appeler","tente","barrage","messagerie","injoignable","decideur-joint","refus","rdv-obtenu","sans-suite"];
+  var STATUS_LABEL = {
+    "a-appeler":"À appeler", "tente":"Sans réponse", "barrage":"Barrage", "messagerie":"Messagerie",
+    "injoignable":"Injoignable", "decideur-joint":"Décideur joint", "refus":"Refus",
+    "rdv-obtenu":"RDV obtenu", "sans-suite":"Sans suite"
+  };
+  var PRIO_ORDER = {"A":0, "B":1, "C":2};
+  var FILTERS = [
+    {key:"actifs", label:"À traiter"},
+    {key:"prioritaires", label:"Prioritaires"},
+    {key:"rdv", label:"RDV obtenus"},
+    {key:"requalifier", label:"À requalifier"},
+    {key:"enrichir", label:"Sans numéro"},
+    {key:"toutes", label:"Toutes"}
+  ];
+  var currentFilter = "actifs";
+  var searchQuery = "";
+  var items = [];
+  var el = document.getElementById.bind(document);
+
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  function toast(msg){
+    var t = document.createElement("div");
+    t.className = "toast"; t.textContent = msg;
+    el("toastRoot").appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2600);
+  }
+
+  function labelNames(issue){ return (issue.labels||[]).map(function(l){ return typeof l === "string" ? l : l.name; }); }
+  function getStatus(issue){
+    var names = labelNames(issue);
+    for(var i=0;i<names.length;i++){
+      var m = /^statut:\s*(.+)$/.exec(names[i]);
+      if(m) return m[1].trim();
+    }
+    return "a-appeler";
+  }
+  function getPrio(issue){
+    var names = labelNames(issue);
+    for(var i=0;i<names.length;i++){
+      var m = /^priorite:\s*(.+)$/.exec(names[i]);
+      if(m) return m[1].trim();
+    }
+    return "C";
+  }
+  function hasLabel(issue, name){ return labelNames(issue).indexOf(name) !== -1; }
+
+  // tiny markdown-ish renderer for the subset we generate (###, **bold**, > quote, -, links, blank-line paragraphs)
+  function renderBody(md){
+    var lines = (md||"").split("\n");
+    var html = [];
+    var inList = false;
+    function closeList(){ if(inList){ html.push("</ul>"); inList=false; } }
+    lines.forEach(function(line){
+      var l = line.trim();
+      if(l.startsWith("### ")){ closeList(); html.push("<h3>"+inline(l.slice(4))+"</h3>"); return; }
+      if(l.startsWith("> ")){ closeList(); html.push("<blockquote>"+inline(l.slice(2))+"</blockquote>"); return; }
+      if(l.startsWith("- ")){ if(!inList){ html.push("<ul>"); inList=true; } html.push("<li>"+inline(l.slice(2))+"</li>"); return; }
+      if(l === "---"){ closeList(); html.push("<hr style='border:none;border-top:1px solid var(--border);margin:14px 0;'>"); return; }
+      closeList();
+      if(l) html.push("<p>"+inline(l)+"</p>");
+    });
+    closeList();
+    return html.join("");
+  }
+  function inline(s){
+    s = esc(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="text-decoration:underline;">$1</a>');
+    return s;
+  }
+
+  function renderChips(){
+    var counts = {};
+    FILTERS.forEach(function(f){ counts[f.key] = itemsForFilter(f.key).length; });
+    el("chipRow").innerHTML = FILTERS.map(function(f){
+      return '<button class="chip'+(currentFilter===f.key?' active':'')+'" data-filter="'+f.key+'">'+f.label+'<span class="n">'+counts[f.key]+'</span></button>';
+    }).join("");
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){
+      c.onclick = function(){ currentFilter = c.getAttribute("data-filter"); renderChips(); renderList(); };
+    });
+  }
+
+  function itemsForFilter(key){
+    return items.filter(function(it){
+      var st = getStatus(it);
+      if(key==="toutes") return true;
+      if(key==="actifs") return ["a-appeler","tente","barrage","messagerie"].indexOf(st) !== -1;
+      if(key==="prioritaires") return (getPrio(it)==="A" || getPrio(it)==="B") && ["a-appeler","tente","barrage","messagerie"].indexOf(st) !== -1;
+      if(key==="rdv") return st === "rdv-obtenu";
+      if(key==="requalifier") return hasLabel(it, "a-requalifier");
+      if(key==="enrichir") return hasLabel(it, "sans-numero");
+      return true;
+    });
+  }
+
+  function renderList(){
+    var list = itemsForFilter(currentFilter);
+    if(searchQuery){
+      var q = searchQuery.toLowerCase();
+      list = list.filter(function(it){ return it.title.toLowerCase().indexOf(q) !== -1 || (it.body||"").toLowerCase().indexOf(q) !== -1; });
+    }
+    list = list.slice().sort(function(a,b){
+      var pa = PRIO_ORDER[getPrio(a)] !== undefined ? PRIO_ORDER[getPrio(a)] : 3;
+      var pb = PRIO_ORDER[getPrio(b)] !== undefined ? PRIO_ORDER[getPrio(b)] : 3;
+      if(pa!==pb) return pa-pb;
+      return a.title.localeCompare(b.title);
+    });
+    var container = el("cardList");
+    if(list.length===0){ container.className="empty"; container.innerHTML = "Aucune fiche dans cette vue."; return; }
+    container.className = "";
+    container.innerHTML = list.map(function(it){
+      var st = getStatus(it);
+      var pr = getPrio(it);
+      var flags = "";
+      if(hasLabel(it,"a-requalifier")) flags += '<span class="flag warn">⚠ À requalifier</span>';
+      if(hasLabel(it,"sans-numero")) flags += '<span class="flag nonum">Aucun numéro</span>';
+      return '' +
+        '<div class="card" data-num="'+it.number+'">' +
+          '<div class="card-top">' +
+            '<div class="card-titles"><div class="co">'+esc(it.title)+'</div></div>' +
+            '<div class="badges"><span class="badge pr-'+esc(pr)+'">'+esc(pr)+'</span></div>' +
+          '</div>' +
+          (flags ? '<div class="flagrow">'+flags+'</div>' : '') +
+          '<div class="card-bottom"><span class="pill st-'+st+'">'+esc(STATUS_LABEL[st]||st)+'</span>' +
+            '<span class="meta">#'+it.number+' · '+ (it.comments||0) +' commentaire'+(it.comments===1?'':'s')+'</span></div>' +
+        '</div>';
+    }).join("");
+    Array.prototype.forEach.call(container.querySelectorAll(".card"), function(c){
+      c.onclick = function(){ openFiche(parseInt(c.getAttribute("data-num"),10)); };
+    });
+  }
+
+  function openFiche(number){
+    var it = items.filter(function(x){ return x.number===number; })[0];
+    if(!it) return;
+    var st = getStatus(it), pr = getPrio(it);
+    el("modalRoot").innerHTML =
+      '<div class="overlay" id="ovl"><div class="sheet">' +
+        '<div class="sheet-head"><h2>'+esc(it.title)+'</h2><button class="close" id="closeBtn">✕</button></div>' +
+        '<div class="badges" style="margin-bottom:12px;"><span class="badge pr-'+esc(pr)+'">'+esc(pr)+'</span> <span class="pill st-'+st+'">'+esc(STATUS_LABEL[st]||st)+'</span></div>' +
+        '<div class="sheet-body">' + renderBody(it.body) + '</div>' +
+        '<a class="gh-cta" href="'+it.html_url+'" target="_blank" rel="noopener">Ouvrir sur GitHub pour mettre à jour →</a>' +
+      '</div></div>';
+    el("closeBtn").onclick = function(){ el("modalRoot").innerHTML=""; };
+    el("ovl").onclick = function(e){ if(e.target.id==="ovl") el("modalRoot").innerHTML=""; };
+  }
+
+  el("searchInput").oninput = function(e){ searchQuery = e.target.value; renderList(); };
+  el("refreshBtn").onclick = function(){ load(true); };
+
+  function load(manual){
+    el("cardList").className = "loading";
+    el("cardList").innerHTML = "Chargement…";
+    fetch(API + "/issues?state=all&per_page=100")
+      .then(function(r){
+        if(!r.ok){ throw new Error("HTTP "+r.status); }
+        return r.json();
+      })
+      .then(function(data){
+        items = data.filter(function(d){ return !d.pull_request; });
+        renderChips();
+        renderList();
+        if(manual) toast("Actualisé — " + items.length + " fiches");
+      })
+      .catch(function(e){
+        el("cardList").className = "empty";
+        el("cardList").innerHTML = "Impossible de charger les fiches depuis GitHub (" + esc(e.message) + ").<br>Réessaie dans une minute (l'API GitHub limite les appels non connectés).";
+      });
+  }
+  load(false);
+})();
+</script>
+</body>
+</html>
